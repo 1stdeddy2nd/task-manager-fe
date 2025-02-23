@@ -1,12 +1,13 @@
+import { useCallback } from 'react';
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "../redux/authSlice";
+import { login, resetError } from "../redux/authSlice";
 import { useNavigate } from "react-router-dom";
 import * as yup from "yup";
-import { AppDispatch, RootState } from "../redux/store"; // Import your store's RootState
+import { AppDispatch, RootState } from "../redux/store";
 
 const loginSchema = yup.object().shape({
-  email: yup.string().email("Invalid email").required("Email is required"),
+  username: yup.string().required("Username is required"),
   password: yup.string().required("Password is required"),
 });
 
@@ -15,23 +16,28 @@ const Login = () => {
   const navigate = useNavigate();
   const { loading, error } = useSelector((state: RootState) => state.auth);
 
-  const handleLogin = async (values: { email: string; password: string }) => {
+  const handleLogin = useCallback(async (values: { username: string; password: string }) => {
     const resultAction = await dispatch(login(values));
     if (login.fulfilled.match(resultAction)) {
       navigate("/");
     }
-  };
+  }, [dispatch, navigate, login])
+
+  const onNavigate = useCallback(() => {
+    dispatch(resetError());
+    navigate('/register');
+  }, [dispatch, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 className="text-3xl font-bold text-center mb-6 text-blue-500">Login</h2>
-        <Formik initialValues={{ email: "", password: "" }} validationSchema={loginSchema} onSubmit={handleLogin}>
+        <Formik initialValues={{ username: "", password: "" }} validationSchema={loginSchema} onSubmit={handleLogin}>
           {() => (
             <Form>
               <div className="mb-4">
-                <Field type="email" name="email" placeholder="Email" className="w-full p-2 border rounded-lg" />
-                <ErrorMessage name="email" component="p" className="text-red-500 text-sm" />
+                <Field type="text" name="username" placeholder="Username" className="w-full p-2 border rounded-lg" />
+                <ErrorMessage name="username" component="p" className="text-red-500 text-sm" />
               </div>
               <div className="mb-4">
                 <Field type="password" name="password" placeholder="Password" className="w-full p-2 border rounded-lg" />
@@ -46,7 +52,7 @@ const Login = () => {
         </Formik>
         <p className="text-center mt-4 text-gray-600">
           Don’t have an account?{" "}
-          <span className="text-blue-500 cursor-pointer" onClick={() => navigate("/register")}>
+          <span className="text-blue-500 cursor-pointer" onClick={onNavigate}>
             Register
           </span>
         </p>

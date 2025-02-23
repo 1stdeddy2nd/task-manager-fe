@@ -1,12 +1,13 @@
+import { useCallback } from 'react';
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { useDispatch, useSelector } from "react-redux";
-import { register } from "../redux/authSlice";
+import { register, resetError } from "../redux/authSlice";
 import { useNavigate } from "react-router-dom";
 import * as yup from "yup";
-import { AppDispatch, RootState } from "../redux/store"; // Import your store's RootState
+import { AppDispatch, RootState } from "../redux/store";
 
 const registerSchema = yup.object().shape({
-  email: yup.string().email("Invalid email").required("Email is required"),
+  username: yup.string().required("Username is required"),
   password: yup
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -26,24 +27,29 @@ const Register = () => {
   const navigate = useNavigate();
   const { loading, error } = useSelector((state: RootState) => state.auth);
 
-  const handleRegister = async (values: { email: string; password: string; confirmPassword: string }) => {
-    const resultAction = await dispatch(register({ email: values.email, password: values.password }));
+  const handleRegister = useCallback(async (values: { username: string; password: string; confirmPassword: string }) => {
+    const resultAction = await dispatch(register({ username: values.username, password: values.password }));
     if (register.fulfilled.match(resultAction)) {
       alert("Registration successful! Please log in.");
       navigate("/login");
     }
-  };
+  }, [navigate, dispatch, register])
+
+  const onNavigate = useCallback(() => {
+    dispatch(resetError());
+    navigate('/login');
+  }, [dispatch, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
         <h2 className="text-3xl font-bold text-center mb-6 text-green-500">Register</h2>
-        <Formik initialValues={{ email: "", password: "", confirmPassword: "" }} validationSchema={registerSchema} onSubmit={handleRegister}>
+        <Formik initialValues={{ username: "", password: "", confirmPassword: "" }} validationSchema={registerSchema} onSubmit={handleRegister}>
           {() => (
             <Form>
               <div className="mb-4">
-                <Field type="email" name="email" placeholder="Email" className="w-full p-2 border rounded-lg" />
-                <ErrorMessage name="email" component="p" className="text-red-500 text-sm" />
+                <Field type="text" name="username" placeholder="Username" className="w-full p-2 border rounded-lg" />
+                <ErrorMessage name="username" component="p" className="text-red-500 text-sm" />
               </div>
               <div className="mb-4">
                 <Field type="password" name="password" placeholder="Password" className="w-full p-2 border rounded-lg" />
@@ -60,6 +66,12 @@ const Register = () => {
             </Form>
           )}
         </Formik>
+        <p className="text-center mt-4 text-gray-600">
+          Already have an account?{" "}
+          <span className="text-green-500 cursor-pointer" onClick={onNavigate}>
+            Login
+          </span>
+        </p>
       </div>
     </div>
   );

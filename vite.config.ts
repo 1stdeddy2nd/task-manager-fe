@@ -10,4 +10,7 @@ export default defineConfig({
       plugins: [tailwindcss()],
     },
   },
+  preview: {
+    port: 5173,
+  },
 })

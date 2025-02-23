@@ -1,7 +1,7 @@
+import { useCallback, useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchTasks, addTask, deleteTask, updateTask, TaskStatus } from "../redux/taskSlice";
 import { logout } from "../redux/authSlice";
-import { useEffect, useState } from "react";
 import { RootState, AppDispatch } from "../redux/store";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as yup from "yup";
@@ -13,53 +13,70 @@ const taskSchema = yup.object().shape({
 });
 
 const Dashboard = () => {
-  const tasks = useSelector((state: RootState) => state.tasks.tasks);
+  const { tasks, error } = useSelector((state: RootState) => state.tasks);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [editingTask, setEditingTask] = useState<{ id: number; title: string; status: TaskStatus } | null>(null);
 
   useEffect(() => {
-    dispatch(fetchTasks());
+    dispatch(fetchTasks()).unwrap().catch((err) => alert(err));
   }, [dispatch]);
 
-  const handleAddTask = async (values: { title: string; status: string }, { resetForm }: any) => {
-    await dispatch(addTask(values));
-    resetForm();
-  };
-
-  const handleUpdateTask = async (values: { title: string; status: TaskStatus }, { resetForm }: any) => {
-    if (editingTask) {
-      await dispatch(updateTask({ id: editingTask.id, title: values.title, status: values.status }));
-      setEditingTask(null);
+  const handleAddTask = useCallback(async (values: { title: string; status: string }, { resetForm }: any) => {
+    try {
+      await dispatch(addTask(values)).unwrap();
       resetForm();
+    } catch (error) {
+      alert(error);
     }
-  };
+  }, [dispatch]);
 
-  const handleDeleteTask = async (id: number) => {
-    await dispatch(deleteTask(id));
-  };
+  const handleUpdateTask = useCallback(async (values: { title: string; status: TaskStatus }, { resetForm }: any) => {
+    if (editingTask) {
+      try {
+        await dispatch(updateTask({ id: editingTask.id, title: values.title, status: values.status })).unwrap();
+        setEditingTask(null);
+        resetForm();
+      } catch (error) {
+        alert(error);
+      }
+    }
+  }, [dispatch, editingTask]);
 
-  const startEdit = (task: { id: number; title: string; status: TaskStatus }) => {
+  const handleDeleteTask = useCallback(async (id: number) => {
+    try {
+      await dispatch(deleteTask(id)).unwrap();
+    } catch (error) {
+      alert(error);
+    }
+  }, [dispatch]);
+
+  const startEdit = useCallback((task: { id: number; title: string; status: TaskStatus }) => {
     setEditingTask(task);
-  };
+  }, []);
 
-  const cancelEdit = (resetForm: any) => {
+  const cancelEdit = useCallback((resetForm: any) => {
     setEditingTask(null);
     resetForm();
-  };
+  }, []);
 
-  const toggleStatus = async (task: { id: number; title: string; status: string }) => {
+  const toggleStatus = useCallback(async (task: { id: number; title: string; status: string }) => {
     const newStatus = task.status === "pending" ? "done" : "pending";
-    await dispatch(updateTask({ ...task, status: newStatus }));
-  };
+    try {
+      await dispatch(updateTask({ ...task, status: newStatus })).unwrap();
+    } catch (error) {
+      alert(error);
+    }
+  }, [dispatch]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     dispatch(logout());
     navigate("/login");
-  };
+  }, [dispatch, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
+      {error && <div className="text-red-500 text-center mb-4">{error}</div>}
       <div className="bg-white p-6 pb-2 rounded-lg shadow-lg max-w-lg mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold text-center">Task Management</h2>

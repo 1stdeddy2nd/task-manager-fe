@@ -5,7 +5,7 @@ npm install
 ```
 
 ```bash
-npm run dev
+npm run build && npm run preview
 ```
 
 You application is run in `localhost:5173`
